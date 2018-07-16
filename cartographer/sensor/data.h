@@ -17,45 +17,30 @@
 #ifndef CARTOGRAPHER_MAPPING_DATA_H_
 #define CARTOGRAPHER_MAPPING_DATA_H_
 
+#include "cartographer/common/make_unique.h"
 #include "cartographer/common/time.h"
-#include "cartographer/kalman_filter/pose_tracker.h"
-#include "cartographer/sensor/laser.h"
-#include "cartographer/sensor/point_cloud.h"
 #include "cartographer/transform/rigid_transform.h"
 
 namespace cartographer {
+
+namespace mapping {
+class TrajectoryBuilderInterface;
+}
+
 namespace sensor {
 
-// This type is a logical union, i.e. only one type of sensor data is actually
-// filled in. It is only used for time ordering sensor data before passing it
-// on.
-struct Data {
-  enum class Type { kImu, kRangefinder, kOdometer };
+class Data {
+ public:
+  explicit Data(const std::string &sensor_id) : sensor_id_(sensor_id) {}
+  virtual ~Data() {}
 
-  struct Imu {
-    Eigen::Vector3d linear_acceleration;
-    Eigen::Vector3d angular_velocity;
-  };
+  virtual common::Time GetTime() const = 0;
+  const std::string &GetSensorId() const { return sensor_id_; }
+  virtual void AddToTrajectoryBuilder(
+      mapping::TrajectoryBuilderInterface *trajectory_builder) = 0;
 
-  struct Rangefinder {
-    Eigen::Vector3f origin;
-    PointCloud ranges;
-  };
-
-  Data(const common::Time time, const Imu& imu)
-      : type(Type::kImu), time(time), imu(imu) {}
-
-  Data(const common::Time time, const Rangefinder& rangefinder)
-      : type(Type::kRangefinder), time(time), rangefinder(rangefinder) {}
-
-  Data(const common::Time time, const transform::Rigid3d& odometer_pose)
-      : type(Type::kOdometer), time(time), odometer_pose(odometer_pose) {}
-
-  Type type;
-  common::Time time;
-  Imu imu;
-  Rangefinder rangefinder;
-  transform::Rigid3d odometer_pose;
+ protected:
+  const std::string sensor_id_;
 };
 
 }  // namespace sensor

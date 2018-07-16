@@ -20,12 +20,27 @@ Cartographer
    :maxdepth: 2
    :hidden:
 
+   configuration
+   evaluation
+   terminology
+   cost_functions
+
 `Cartographer`_ is a system that provides real-time simultaneous localization
 and mapping (`SLAM`_) in 2D and 3D across multiple platforms and sensor
 configurations.
 
 .. _Cartographer: https://github.com/googlecartographer/cartographer
 .. _SLAM: https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping
+
+Technical Overview
+==================
+* High level system overview of Cartographer
+
+.. image:: high_level_system_overview.png
+     :target: https://github.com/googlecartographer/cartographer/blob/master/docs/source/high_level_system_overview.png
+
+.. To make modifications, edit the original Google Sketch and export a png.
+.. https://docs.google.com/drawings/d/1kCJ_dEbSvV83THCUfMikCPw7xFrTkrvRw5r6Ji8C90c/edit?usp=sharing
 
 Getting started
 ===============
@@ -51,19 +66,20 @@ with the standalone library. Currently, it is the best available reference.
 
 On Ubuntu 14.04 (Trusty):
 
-.. literalinclude:: ../../scripts/install_debs.sh
+.. literalinclude:: ../../scripts/install_debs_cmake.sh
   :language: bash
-  :linenos:
   :lines: 20-
 
 .. literalinclude:: ../../scripts/install_ceres.sh
   :language: bash
-  :linenos:
   :lines: 20-
 
-.. literalinclude:: ../../scripts/install_cartographer.sh
+.. literalinclude:: ../../scripts/install_proto3.sh
   :language: bash
-  :linenos:
+  :lines: 20-
+
+.. literalinclude:: ../../scripts/install_cartographer_cmake.sh
+  :language: bash
   :lines: 20-
 
 .. _system-requirements:
@@ -76,8 +92,8 @@ on systems that meet the following requirements:
 
 * 64-bit, modern CPU (e.g. 3rd generation i7)
 * 16 GB RAM
-* Ubuntu 14.04 (Trusty)
-* gcc version 4.8.4
+* Ubuntu 14.04 (Trusty) and 16.04 (Xenial)
+* gcc version 4.8.4 and 5.4.0
 
 Known Issues
 ------------

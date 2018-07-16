@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto2";
+syntax = "proto3";
 
 package cartographer.mapping.proto;
 
@@ -21,16 +21,27 @@ import "cartographer/transform/proto/transform.proto";
 option java_outer_classname = "TrajectoryOuterClass";
 
 message Trajectory {
-  // NEXT_ID: 7
+  // NEXT_ID: 8
   message Node {
-    optional int64 timestamp = 1;
-    // Transform from tracking to map frame.
-    optional transform.proto.Rigid3d pose = 5;
+    // Index of this node within its trajectory.
+    int32 node_index = 7;
+
+    int64 timestamp = 1;
+
+    // Transform from tracking to global map frame.
+    transform.proto.Rigid3d pose = 5;
   }
 
   message Submap {
-    optional transform.proto.Rigid3d pose = 1;
+    // Index of this submap within its trajectory.
+    int32 submap_index = 2;
+
+    // Transform from submap to global map frame.
+    transform.proto.Rigid3d pose = 1;
   }
+
+  // ID of this trajectory.
+  int32 trajectory_id = 3;
 
   // Time-ordered sequence of Nodes.
   repeated Node node = 1;

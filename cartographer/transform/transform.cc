@@ -19,9 +19,9 @@
 namespace cartographer {
 namespace transform {
 
-Rigid2d ToRigid2(const proto::Rigid2d& pose) {
-  return Rigid2d({pose.translation().x(), pose.translation().y()},
-                 pose.rotation());
+Rigid2d ToRigid2(const proto::Rigid2d& transform) {
+  return Rigid2d({transform.translation().x(), transform.translation().y()},
+                 transform.rotation());
 }
 
 Eigen::Vector2d ToEigen(const proto::Vector2d& vector) {
@@ -30,6 +30,10 @@ Eigen::Vector2d ToEigen(const proto::Vector2d& vector) {
 
 Eigen::Vector3f ToEigen(const proto::Vector3f& vector) {
   return Eigen::Vector3f(vector.x(), vector.y(), vector.z());
+}
+
+Eigen::Vector4f ToEigen(const proto::Vector4f& vector) {
+  return Eigen::Vector4f(vector.x(), vector.y(), vector.z(), vector.t());
 }
 
 Eigen::Vector3d ToEigen(const proto::Vector3d& vector) {
@@ -76,11 +80,27 @@ proto::Rigid3f ToProto(const transform::Rigid3f& rigid) {
   return proto;
 }
 
+proto::Vector2d ToProto(const Eigen::Vector2d& vector) {
+  proto::Vector2d proto;
+  proto.set_x(vector.x());
+  proto.set_y(vector.y());
+  return proto;
+}
+
 proto::Vector3f ToProto(const Eigen::Vector3f& vector) {
   proto::Vector3f proto;
   proto.set_x(vector.x());
   proto.set_y(vector.y());
   proto.set_z(vector.z());
+  return proto;
+}
+
+proto::Vector4f ToProto(const Eigen::Vector4f& vector) {
+  proto::Vector4f proto;
+  proto.set_x(vector.x());
+  proto.set_y(vector.y());
+  proto.set_z(vector.z());
+  proto.set_t(vector.w());
   return proto;
 }
 

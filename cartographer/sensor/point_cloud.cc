@@ -32,10 +32,23 @@ PointCloud TransformPointCloud(const PointCloud& point_cloud,
   return result;
 }
 
-PointCloud Crop(const PointCloud& point_cloud, const float min_z,
-                const float max_z) {
+TimedPointCloud TransformTimedPointCloud(const TimedPointCloud& point_cloud,
+                                         const transform::Rigid3f& transform) {
+  TimedPointCloud result;
+  result.reserve(point_cloud.size());
+  for (const Eigen::Vector4f& point : point_cloud) {
+    Eigen::Vector4f result_point;
+    result_point.head<3>() = transform * point.head<3>();
+    result_point[3] = point[3];
+    result.emplace_back(result_point);
+  }
+  return result;
+}
+
+PointCloud CropPointCloud(const PointCloud& point_cloud, const float min_z,
+                          const float max_z) {
   PointCloud cropped_point_cloud;
-  for (const auto& point : point_cloud) {
+  for (const Eigen::Vector3f& point : point_cloud) {
     if (min_z <= point.z() && point.z() <= max_z) {
       cropped_point_cloud.push_back(point);
     }
@@ -43,24 +56,15 @@ PointCloud Crop(const PointCloud& point_cloud, const float min_z,
   return cropped_point_cloud;
 }
 
-proto::PointCloud ToProto(const PointCloud& point_cloud) {
-  proto::PointCloud proto;
-  for (const auto& point : point_cloud) {
-    proto.add_x(point.x());
-    proto.add_y(point.y());
-    proto.add_z(point.z());
+TimedPointCloud CropTimedPointCloud(const TimedPointCloud& point_cloud,
+                                    const float min_z, const float max_z) {
+  TimedPointCloud cropped_point_cloud;
+  for (const Eigen::Vector4f& point : point_cloud) {
+    if (min_z <= point.z() && point.z() <= max_z) {
+      cropped_point_cloud.push_back(point);
+    }
   }
-  return proto;
-}
-
-PointCloud ToPointCloud(const proto::PointCloud& proto) {
-  PointCloud point_cloud;
-  const int size = std::min({proto.x_size(), proto.y_size(), proto.z_size()});
-  point_cloud.reserve(size);
-  for (int i = 0; i != size; ++i) {
-    point_cloud.emplace_back(proto.x(i), proto.y(i), proto.z(i));
-  }
-  return point_cloud;
+  return cropped_point_cloud;
 }
 
 }  // namespace sensor

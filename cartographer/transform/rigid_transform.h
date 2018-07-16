@@ -17,6 +17,7 @@
 #ifndef CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_
 #define CARTOGRAPHER_TRANSFORM_RIGID_TRANSFORM_H_
 
+#include <cmath>
 #include <iostream>
 #include <string>
 
@@ -32,12 +33,10 @@ namespace transform {
 template <typename FloatType>
 class Rigid2 {
  public:
-  using Affine = Eigen::Transform<FloatType, 2, Eigen::Affine>;
   using Vector = Eigen::Matrix<FloatType, 2, 1>;
   using Rotation2D = Eigen::Rotation2D<FloatType>;
 
-  Rigid2()
-      : translation_(Vector::Identity()), rotation_(Rotation2D::Identity()) {}
+  Rigid2() : translation_(Vector::Zero()), rotation_(Rotation2D::Identity()) {}
   Rigid2(const Vector& translation, const Rotation2D& rotation)
       : translation_(translation), rotation_(rotation) {}
   Rigid2(const Vector& translation, const double rotation)
@@ -55,9 +54,7 @@ class Rigid2 {
     return Rigid2(vector, Rotation2D::Identity());
   }
 
-  static Rigid2<FloatType> Identity() {
-    return Rigid2<FloatType>(Vector::Zero(), Rotation2D::Identity());
-  }
+  static Rigid2<FloatType> Identity() { return Rigid2<FloatType>(); }
 
   template <typename OtherType>
   Rigid2<OtherType> cast() const {
@@ -79,8 +76,8 @@ class Rigid2 {
     return Rigid2(translation, rotation);
   }
 
-  string DebugString() const {
-    string out;
+  std::string DebugString() const {
+    std::string out;
     out.append("{ t: [");
     out.append(std::to_string(translation().x()));
     out.append(", ");
@@ -125,16 +122,11 @@ using Rigid2f = Rigid2<float>;
 template <typename FloatType>
 class Rigid3 {
  public:
-  using Affine = Eigen::Transform<FloatType, 3, Eigen::Affine>;
   using Vector = Eigen::Matrix<FloatType, 3, 1>;
   using Quaternion = Eigen::Quaternion<FloatType>;
   using AngleAxis = Eigen::AngleAxis<FloatType>;
 
-  Rigid3()
-      : translation_(Vector::Identity()), rotation_(Quaternion::Identity()) {}
-  // TODO(damonkohler): Remove
-  explicit Rigid3(const Affine& affine)
-      : translation_(affine.translation()), rotation_(affine.rotation()) {}
+  Rigid3() : translation_(Vector::Zero()), rotation_(Quaternion::Identity()) {}
   Rigid3(const Vector& translation, const Quaternion& rotation)
       : translation_(translation), rotation_(rotation) {}
   Rigid3(const Vector& translation, const AngleAxis& rotation)
@@ -152,9 +144,14 @@ class Rigid3 {
     return Rigid3(vector, Quaternion::Identity());
   }
 
-  static Rigid3<FloatType> Identity() {
-    return Rigid3<FloatType>(Vector::Zero(), Quaternion::Identity());
+  static Rigid3 FromArrays(const std::array<FloatType, 4>& rotation,
+                           const std::array<FloatType, 3>& translation) {
+    return Rigid3(Eigen::Map<const Vector>(translation.data()),
+                  Eigen::Quaternion<FloatType>(rotation[0], rotation[1],
+                                               rotation[2], rotation[3]));
   }
+
+  static Rigid3<FloatType> Identity() { return Rigid3<FloatType>(); }
 
   template <typename OtherType>
   Rigid3<OtherType> cast() const {
@@ -171,8 +168,8 @@ class Rigid3 {
     return Rigid3(translation, rotation);
   }
 
-  string DebugString() const {
-    string out;
+  std::string DebugString() const {
+    std::string out;
     out.append("{ t: [");
     out.append(std::to_string(translation().x()));
     out.append(", ");
@@ -189,6 +186,12 @@ class Rigid3 {
     out.append(std::to_string(rotation().z()));
     out.append("] }");
     return out;
+  }
+
+  bool IsValid() const {
+    return !std::isnan(translation_.x()) && !std::isnan(translation_.y()) &&
+           !std::isnan(translation_.z()) &&
+           std::abs(FloatType(1) - rotation_.norm()) < FloatType(1e-3);
   }
 
  private:

@@ -17,11 +17,15 @@
 #ifndef CARTOGRAPHER_IO_XRAY_POINTS_PROCESSOR_H_
 #define CARTOGRAPHER_IO_XRAY_POINTS_PROCESSOR_H_
 
+#include <map>
+
+#include "Eigen/Core"
 #include "cartographer/common/lua_parameter_dictionary.h"
+#include "cartographer/io/file_writer.h"
 #include "cartographer/io/points_processor.h"
+#include "cartographer/mapping/3d/hybrid_grid.h"
 #include "cartographer/mapping/detect_floors.h"
 #include "cartographer/mapping/proto/trajectory.pb.h"
-#include "cartographer/mapping_3d/hybrid_grid.h"
 #include "cartographer/transform/rigid_transform.h"
 
 namespace cartographer {
@@ -32,12 +36,18 @@ class XRayPointsProcessor : public PointsProcessor {
  public:
   constexpr static const char* kConfigurationFileActionName =
       "write_xray_image";
-  XRayPointsProcessor(double voxel_size, const transform::Rigid3f& transform,
-                      const std::vector<mapping::Floor>& floors,
-                      const string& output_filename, PointsProcessor* next);
+  enum class DrawTrajectories { kNo, kYes };
+  XRayPointsProcessor(
+      double voxel_size, const transform::Rigid3f& transform,
+      const std::vector<mapping::Floor>& floors,
+      const DrawTrajectories& draw_trajectories,
+      const std::string& output_filename,
+      const std::vector<mapping::proto::Trajectory>& trajectories,
+      FileWriterFactory file_writer_factory, PointsProcessor* next);
 
   static std::unique_ptr<XRayPointsProcessor> FromDictionary(
-      const mapping::proto::Trajectory& trajectory,
+      const std::vector<mapping::proto::Trajectory>& trajectories,
+      FileWriterFactory file_writer_factory,
       common::LuaParameterDictionary* dictionary, PointsProcessor* next);
 
   ~XRayPointsProcessor() override {}
@@ -45,17 +55,41 @@ class XRayPointsProcessor : public PointsProcessor {
   void Process(std::unique_ptr<PointsBatch> batch) override;
   FlushResult Flush() override;
 
+  Eigen::AlignedBox3i bounding_box() const { return bounding_box_; }
+
  private:
+  struct ColumnData {
+    float sum_r = 0.;
+    float sum_g = 0.;
+    float sum_b = 0.;
+    uint32_t count = 0;
+  };
+
+  struct Aggregation {
+    mapping::HybridGridBase<bool> voxels;
+    std::map<std::pair<int, int>, ColumnData> column_data;
+  };
+
+  void WriteVoxels(const Aggregation& aggregation,
+                   FileWriter* const file_writer);
+  void Insert(const PointsBatch& batch, Aggregation* aggregation);
+
+  const DrawTrajectories draw_trajectories_;
+  const std::vector<mapping::proto::Trajectory> trajectories_;
+  FileWriterFactory file_writer_factory_;
   PointsProcessor* const next_;
 
   // If empty, we do not separate into floors.
   std::vector<mapping::Floor> floors_;
 
-  const string output_filename_;
+  const std::string output_filename_;
   const transform::Rigid3f transform_;
 
   // Only has one entry if we do not separate into floors.
-  std::vector<mapping_3d::HybridGridBase<bool>> voxels_;
+  std::vector<Aggregation> aggregations_;
+
+  // Bounding box containing all cells with data in all 'aggregations_'.
+  Eigen::AlignedBox3i bounding_box_;
 };
 
 }  // namespace io

@@ -41,7 +41,7 @@ constexpr float kPrecision = 0.001f;
 
 // Matcher for 3-d vectors w.r.t. to the target precision.
 MATCHER_P(ApproximatelyEquals, expected,
-          string("is equal to ") + PrintToString(expected)) {
+          std::string("is equal to ") + PrintToString(expected)) {
   return (arg - expected).isZero(kPrecision);
 }
 
@@ -106,28 +106,13 @@ TEST(CompressPointCloudTest, CompressesNoGaps) {
   EXPECT_EQ(decompressed.size(), recompressed.size());
 
   std::vector<float> x_coord;
-  for (const auto& p : compressed) {
+  for (const Eigen::Vector3f& p : compressed) {
     x_coord.push_back(p[0]);
   }
   std::sort(x_coord.begin(), x_coord.end());
   for (size_t i = 1; i < x_coord.size(); ++i) {
     EXPECT_THAT(std::abs(x_coord[i] - x_coord[i - 1]),
                 FloatNear(kPrecision, 1e-7f));
-  }
-}
-
-TEST(CompressPointCloudTest, CompressesAndReturnsOrder) {
-  PointCloud point_cloud = {
-      Eigen::Vector3f(1.f, 0.f, 0.f), Eigen::Vector3f(-10.f, 0.f, 0.f),
-      Eigen::Vector3f(1.f, 0.f, 0.f), Eigen::Vector3f(-10.f, 0.f, 0.f)};
-  std::vector<int> new_to_old;
-  CompressedPointCloud compressed =
-      CompressedPointCloud::CompressAndReturnOrder(point_cloud, &new_to_old);
-  EXPECT_EQ(point_cloud.size(), new_to_old.size());
-  int i = 0;
-  for (const Eigen::Vector3f& point : compressed) {
-    EXPECT_THAT(point, ApproximatelyEquals(point_cloud[new_to_old[i]]));
-    ++i;
   }
 }
 
